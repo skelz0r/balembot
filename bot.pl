@@ -14,14 +14,18 @@ use warnings;
 # Module IRC
 use POE;
 use POE::Component::IRC;
+use List::Util qw(shuffle);
 
 # Vars
 my $tps_jizzception = 0;
+my $tps_dick_in_a_box = 0;
 my $tps_jizz = 0;
 my $tps_coucou = 0;
 my $user_coucou = '';
 my $id_coucou = 0;
 my $bot_owner = 'Skelz0r';
+my $last_msg = "";
+my $last_kick_user = '';
 
 my $file_dir = "txt";
 my $file_quotes = "$file_dir/quotes_balemboy.txt";
@@ -48,9 +52,10 @@ my %colors = (
 );
 
 my @coucou_non = ("JUST CORN!", "Pas cool :(", "Genre !", ":(", "T'as peur hein ? ;D", "Pffff", "T'as bien raison :)","FU","Noob","Just LOL","Tocard ..");
-my @insultes = ("pute",,"trainée","raclure","michou","fiente","salaud", "batard","vtff","rage","connard","non","kill","kick","ban","oui","gueule","sale","fat","gros","tg","noob","enfoiré","espèce de","enfoirayd","n00b","boufon");
+my @insultes = ("pute",,"trainée","raclure","michou","fiente","salaud", "batard","vtff","rage","connard","non","kill","kick","ban","oui","gueule","sale","fat","gros","tg","noob","enfoiré","espèce de","enfoirayd","n00b","boufon","tu");
 my @hl_bot = ("OH MY BOT !", "Oui ?", "Comment ?", "Mais qu'est-ce que tu racontes ?","Tu sais que tu parles à un robot ? TOCARD !", "N'impZ", "Non", "Wtf ?", "Je ne sais pas", "Oui", "Ta gueule un peu pour voir ?", "RAF", "TG n00b","LOL","WHAAAAAT ?","FU","Arrête de faire ton kevin ..","Seriously ..", "Tocard", "gizmo: Kick le, il sert à rien", "Idiot");
 my @need = ("ableton", "rhum","bière", "vodka", "apéro", "drogue", "clope", "sexe", "anna", "leffe", "cognac", "whisky", "vin", "gin", "fête", "soirée","pipe","fellation","sodomie","porn","feriel","weed","cigarette","anna","marvin","tabac","café","cafe");
+my @cla_array = ("RINETTE", "FOUTI", "non", "SSIQUE", "MARD", "VICULE", "PET", "BOTER", "MANT", "MÉ", "BAUD", "BAUDAGE", "MSER", "POTAGE", "QUE", "QUETTE", "KEKETTE", "RIFIER", "SH", "VECIN", "VIER", "YON", "YETTE", "QUÉ", "PIR");
 my @bonhomme_tete = ('&','#','@','§','o','ô','$','()','[]','{}','0','8','<>');
 my @bonhomme_bras_g = ('\\','\\\\',' ','_','/','\\');
 my @bonhomme_bras_d = ('/',' ','//','_','/','\\');
@@ -137,6 +142,17 @@ sub match_tab
 	return 0;
 }
 
+## Fonction kick safe
+sub kick
+{
+	my ($kernel,$chan,$user,$msg) = @_;
+
+	if ($user ne 'gizmo' && $user ne 'Lix') # && $user ne 'Skelz0r')
+	{
+		$irc->yield(kick => $chan => $user => $msg);
+		$last_kick_user = $user;
+	}
+}
 ## Affichage d'une quote
 sub aff_quote
 {
@@ -201,7 +217,7 @@ sub add_quote
 	else
 	{
 		$irc->yield(privmsg => $chan,"C'est quoi cette quote à deux balles ? Pas de balemboy ?");
-		$irc->delay([kick => $chan => $user => "Et bah tu sors !"],1);
+		kick($kernel, $chan, $user, "Et bah tu sors !");
 		$irc->delay([ctcp => $chan => 'ACTION est outré :o'],1);
 		$irc->delay([invite => $user => $chan],5);
 	}
@@ -239,7 +255,7 @@ sub aff_coucou_non
 	{
 		if ( $nbr_rand == (scalar @coucou_non) )
 		{	
-			$irc->delay([kick => $chan => $user_coucou => "On ne parle pas comme ça au $username !"],1);
+			kick($kernel, $chan, $user_coucou, "On ne parle pas comme ça au $username !");
 		}
 		else
 		{
@@ -305,6 +321,11 @@ sub aff_jizz_2
 		{
 			$tps_jizzception = time+10;
 		}
+		if ($jizz_sentence eq "DICK")
+		{
+			$tps_dick_in_a_box = time+10;
+		}
+			
 	}
 
 	$tps_jizz -= 10;
@@ -318,6 +339,14 @@ sub aff_jizz_3
 	$tps_jizzception = time-10;
 }
 
+sub aff_dick_box
+{
+	my ($kernel,$chan) = @_;
+	#my @dick_article = ["the", "a", "an"];
+
+	$irc->delay([privmsg => $chan,"A"],1) if ( $tps_dick_in_a_box > time );
+	$tps_dick_in_a_box = time-10;
+}
 ## and_again
 sub aff_and_again
 {
@@ -363,16 +392,10 @@ sub bbb
 	{
 		$bbb_cpt = 0;
 		$bbb = 0;
-	       	if ( $user ne 'gizmo' && $user ne 'Lix' )
-		{
-			$irc->yield(kick => $chan => $user => "BANG !");
-		}
-		else
-		{
-			$irc->yield(privmsg => $chan => "Désolé, je ne kickerai pas $user :p");
-		}
+		kick($kernel, $chan, $user, "BANG");
 	}
 }
+
 ## GESTION EVENTS
 # Evenements que le bot va gérer
 POE::Session->create(
@@ -424,7 +447,14 @@ sub on_join
 		$bg = int rand 15;
 	}
 
-	$irc->yield(privmsg => $chan[0],"\x03".$fg.",".$bg."JOYEUX BALEMBOY ".$user." !") if ( $user ne $username );
+	if ($user eq $last_kick_user)
+	{
+		$irc->yield(privmsg => $chan[0],"\x03".$fg.",".$bg."UMAD ".$user."?") if ( $user ne $username );
+	}
+	else
+	{
+		$irc->yield(privmsg => $chan[0],"\x03".$fg.",".$bg."JOYEUX BALEMBOY ".$user." !") if ( $user ne $username );
+	}
 
 	#$irc->yield(kick => $chan[0] => $user => "AU REVOIR :P") if ( $user eq 'Barberose' );
 
@@ -453,7 +483,7 @@ sub on_speak
 
 		my @params = grep {!/^\s*$/} split(/\s+/, substr($msg, length("!$commande")));
 		# Gestion commandes
-		aff_help($kernel,$user) if ( $commande eq 'help' );
+		#aff_help($kernel,$user) if ( $commande eq 'help' );
 
 		if ( $commande eq 'balemboy' )
 		{
@@ -464,10 +494,46 @@ sub on_speak
 			aff_quote($kernel,$chan[0][0],$params[0]);
 		}
 
+		if ( $commande eq 'help' )
+		{
+			kick($kernel, $chan[0][0], $user, "La sortie c'est par là :]");
+		}
+
+
 		add_quote($kernel,$chan[0][0],$user,@params) if ( $commande eq 'add_balemboy' && $params[0] !~ m/^$/ );
 
 		gmab($kernel,$chan[0][0]) if ( $commande eq 'gmab' );
 	}
+	
+	# substitute .. wait ..
+	if ( $msg =~ m/^s\/\w*\/\w*\// )
+	{
+		my @params = ($msg =~ m/^s\/(\w*)\/(\w*)\//);
+		my $tmp_last_message = $last_msg;
+		$last_msg =~ s/$params[0]/$params[1]/;
+		
+		if ($tmp_last_message eq $last_msg)
+		{
+			if ( int(rand(3)) == 1 )
+			{
+				kick($kernel, $chan[0][0], $user, "TODO");
+			}
+			else
+			{
+				$irc->yield(privmsg => $chan[0][0],"TODO");
+				$last_msg = "FIXME";
+			}
+		}
+		else
+		{
+			$irc->yield(privmsg => $chan[0][0],$last_msg);
+		}
+	}
+	else
+	{
+		$last_msg = $msg;
+	}
+	
 
 	# BA .. LEMBOY	
 	$irc->yield(privmsg => $chan[0][0],'LEMBOY') if ( $msg =~ m/BA+?( |\.)*?$/ );
@@ -481,10 +547,35 @@ sub on_speak
 	aff_FU($kernel,$chan[0][0]) if ( $msg =~ m/^F+U+ *?$/i );
 
 	# JIZZ
-	aff_jizz_1($kernel,$chan[0][0]) if ( $msg =~ m/^(I+|S*H+E+|\w+)* *(J+I+ZZ+|C+A+M+E+|P+O{2,}P+) *$/ );
-	aff_jizz_2($kernel,$chan[0][0]) if ( $msg =~ m/^(M+Y+|Y*O+U+R+|H+(I+S+|E+R+)|#?\w+ *\w*'s) *$/ );
+	if ( $msg =~ m/^(I+|S*H+E+|\w+)* *(J+I+ZZ+|C+A+M+E+|P+O{2,}P+) *$/ )
+	{
+		if ( int(rand(50)) == 1 )
+		{
+			kick($kernel, $chan[0][0], $user, "OUT");
+		}
+		else
+		{
+			aff_jizz_1($kernel,$chan[0][0]);
+		}
+	}
 	
+	if ( $msg =~ m/^(M+Y+|Y*O+U+R+|H+(I+S+|E+R+)|#?\w+ *\w*'s) *$/ )
+	{
+		if ( int(rand(50)) == 1 )
+		{
+			kick($kernel, $chan[0][0], $user, "FREE KICK IS FREE");
+		}
+		else
+		{
+			aff_jizz_2($kernel,$chan[0][0]) 
+		}
+	}
+
+
 	aff_jizz_3($kernel,$chan[0][0]) if ( $msg =~ m/^I+N+ *$/ );
+
+	# DICK BOX
+	aff_dick_box($kernel,$chan[0][0]) if ( $msg =~ m/^I+N+ *$/ );
 
 	# AND AGAIN
 	aff_and_again($kernel,$chan[0][0]) if ( $msg =~ m/^ *?(a+n+d+ +a+g+a+i+n+ *!*)+$/i);
@@ -497,7 +588,7 @@ sub on_speak
 	{
 		if ( match_tab($msg,@insultes) && $user ne 'gizmo' && $user ne 'Lix' )
 		{
-			$irc->yield(kick => $chan[0][0] => $user => "Reste poli");
+			kick($kernel, $chan[0][0], $user, "Reste comme Pierre");
 		}
 		else
 		{
@@ -525,7 +616,12 @@ sub on_speak
 	$irc->delay([privmsg => $chan[0][0] => 'GUEULE'],1) if ( $msg =~ m/TA+?( |\.)*?$/ );
 	
 	# CLA .. SSIQUE
-	$irc->delay([privmsg => $chan[0][0] => 'RINETTE'],1) if ( $msg =~ m/CLA+?( |\.)*?$/ );
+ 	if ( $msg =~ m/CLA+?( |\.)*?$/ )
+	{
+		my $nbr_rand = int rand scalar @cla_array;
+	
+		$irc->delay([privmsg => $chan[0][0] => $cla_array[$nbr_rand]],1)
+	}
 
 	# CI .. MER
 	$irc->delay([privmsg => $chan[0][0] => 'MER'],1) if ( $msg =~ m/CI+?( |\.)*?$/ );
@@ -533,6 +629,18 @@ sub on_speak
 	$irc->delay([privmsg => $chan[0][0] => 'PLUS'],1) if ( $msg =~ m/EN+?( |\.)*?$/ );
 	# YA .. MOYEN
 	$irc->delay([privmsg => $chan[0][0] => 'MOYEN'],1) if ( $msg =~ m/Y+A+?( |\.)*?$/ );
+	
+	# Random kick is random
+	kick($kernel, $chan[0][0], $user, "Problem?") if ( int(rand(500)) == 42 );
+	
+	# yo .. plait
+	$irc->delay([privmsg => $chan[0][0] => 'plait'],1) if ( $msg =~ m/y+o+?( |\.)*?$/ );
+	
+	# AUTISME
+	$irc->delay([privmsg => $chan[0][0] => 'JUSTICE NULLE PART'],1) if ( $msg =~ m/AUTISME PARTOUT/ && $bot_owner eq $user );
+
+	# SRLY $nick
+	$irc->delay([privmsg => $chan[0][0] => "SRLY $user ?"],int(rand(60*60*24))) if ( int(rand(50)) == 1 );
 }
 
 # Boucle des events
