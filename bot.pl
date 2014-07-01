@@ -112,7 +112,7 @@ my $ircname = 'I\'m your master !';
 my $username = @ids[0];
 my $password = @ids[1];
 
-my @channels = ('#balemboy','#baliistemboy');
+my @channels = ('#balemboy','#anarchiie');
 
 ## CONNEXION 
 my ($irc) = POE::Component::IRC->spawn();
@@ -147,7 +147,7 @@ sub kick
 {
 	my ($kernel,$chan,$user,$msg) = @_;
 
-	if ($user ne 'gizmo' && $user ne 'Lix') # && $user ne 'Skelz0r')
+	if ($user ne 'gizmo' && $user ne 'Skelz0r' && $user ne 'Lix')
 	{
 		$irc->yield(kick => $chan => $user => $msg);
 		$last_kick_user = $user;
@@ -316,7 +316,6 @@ sub aff_jizz_2
  	if ( $tps_jizz >= time - 10 )
 	{
 		$irc->delay([privmsg => $chan,"$jizz_sentence"],1);
-		$irc->delay([privmsg => $chan,"corn: U MAD BRO?"],2) if ($jizz_sentence eq "CORN");
 		if ($jizz_sentence eq "JIZZ")
 		{
 			$tps_jizzception = time+10;
@@ -424,12 +423,13 @@ sub bot_start {
 # A la connection
 sub on_connect
 {
-	my ($chan) = @channels;
+	my ($chan1, $chan2) = @channels;
 
 	$irc->yield(privmsg => 'nickserv',"identify $password"); # identification
 	sleep 1;
-	$irc->yield(join => @channels);
-	$irc->yield(privmsg => $chan,"COUCOU");
+	$irc->yield(join => $chan1);
+	$irc->yield(join => $chan2);
+	$irc->yield(privmsg => $chan1,"COUCOU, TU VEUX VOIR MON BYTE?");
 }
 
 # Quand un user arrive sur le chan
@@ -450,6 +450,7 @@ sub on_join
 	if ($user eq $last_kick_user)
 	{
 		$irc->yield(privmsg => $chan[0],"\x03".$fg.",".$bg."UMAD ".$user."?") if ( $user ne $username );
+		$last_kick_user = '';
 	}
 	else
 	{
@@ -462,6 +463,17 @@ sub on_join
 #	$irc->yield(mode => $chan[0] => '+v' => $user) if ( $user ne $username );
 }
 
+sub counter_kick
+{
+	my ($kernel,$chan) = @_;
+	
+	for ( my $i = 0 ; $i < 10 ; $i++ )
+	{
+		#system("sleep 0.6 ; ./counterkick.pl $i &");
+	}
+
+}
+
 # Quand un user parle
 sub on_speak
 {
@@ -471,8 +483,8 @@ sub on_speak
 	my $user = ( split(/!/,$user_) )[0];
 
 	# Kick BIO
-	$irc->yield(ban => $chan[0][0] => $user) if ( $user eq "Barberose" );
-	$irc->yield(kick => $chan[0][0] => $user => "TG n00b" ) if ( $user eq "Barberose" );
+	#$irc->yield(ban => $chan[0][0] => $user) if ( $user eq "Barberose" );
+	#$irc->yield(kick => $chan[0][0] => $user => "TG n00b" ) if ( $user eq "Barberose" );
 #	$irc->yield(kick => $chan[0][0] => $user => "TG n00b" ) if ( $user eq "Twibby" );
 	
 	# Disjonction des cas suivants ce qui est demande
@@ -499,10 +511,19 @@ sub on_speak
 			kick($kernel, $chan[0][0], $user, "La sortie c'est par là :]");
 		}
 
+		if ( $commande eq "maybe" or $commande eq "yes" or $commande eq "no" )
+		{
+			if ($user ne 'gizmo' && $user ne 'Skelz0r' && $user ne 'Lix')
+			{
+				$irc->delay([kick => $chan[0][0] => $user => "SRLY $user ?"],int(rand(60*60*2))) if (int(rand(20)) == 1);
+			}
+		}
 
 		add_quote($kernel,$chan[0][0],$user,@params) if ( $commande eq 'add_balemboy' && $params[0] !~ m/^$/ );
 
 		gmab($kernel,$chan[0][0]) if ( $commande eq 'gmab' );
+
+		counter_kick($kernel, $chan[0][0]) if ($commande eq 'votekick');
 	}
 	
 	# substitute .. wait ..
@@ -539,7 +560,7 @@ sub on_speak
 	$irc->yield(privmsg => $chan[0][0],'LEMBOY') if ( $msg =~ m/BA+?( |\.)*?$/ );
 
 	# COUCOU
-	aff_coucou($kernel,$chan[0][0],$user) if ( $msg =~ m/(c+o+u+c+o+u+|kiko+|kikou|y+o+p+|salut)/i );
+	aff_coucou($kernel,$chan[0][0],$user) if ( $msg =~ m/(c+o+u+c+o+u+|kiko+|kikou|y+o+p+|s+a+l+u+t+|s+u+p+)/i );
 	aff_coucou_lien($kernel,$chan[0][0]) if ( $user eq $user_coucou &&  $msg =~ m/^ *?(y+o+p+|n+e+d+|o+u+i+|o+w+i+|carrement|trop)/i );
 	aff_coucou_non($kernel,$chan[0][0]) if ( $user eq $user_coucou && $msg =~ m/^ *?(n+o+n+|n+a+n+|w+h*a+t+|h+m+) *?$/i );
 
@@ -547,7 +568,7 @@ sub on_speak
 	aff_FU($kernel,$chan[0][0]) if ( $msg =~ m/^F+U+ *?$/i );
 
 	# JIZZ
-	if ( $msg =~ m/^(I+|S*H+E+|\w+)* *(J+I+ZZ+|C+A+M+E+|P+O{2,}P+) *$/ )
+	if ( $msg =~ m/^(I+|S*H+E+|\w+)* *(C+O+R+N+|J+I+ZZ+|K+I+C+K+|B+A+S+|J+S+O+N+|C+A+M+E+|P+O{2,}P+|G+I+C+L+E+) *$/ )
 	{
 		if ( int(rand(50)) == 1 )
 		{
@@ -561,7 +582,7 @@ sub on_speak
 	
 	if ( $msg =~ m/^(M+Y+|Y*O+U+R+|H+(I+S+|E+R+)|#?\w+ *\w*'s) *$/ )
 	{
-		if ( int(rand(50)) == 1 )
+		if ( int(rand(100)) == 1 )
 		{
 			kick($kernel, $chan[0][0], $user, "FREE KICK IS FREE");
 		}
@@ -586,7 +607,7 @@ sub on_speak
 	# Insultes sur balembot
 	if ( $msg =~ m/$username/i )
 	{
-		if ( match_tab($msg,@insultes) && $user ne 'gizmo' && $user ne 'Lix' )
+		if ( match_tab($msg,@insultes) )
 		{
 			kick($kernel, $chan[0][0], $user, "Reste comme Pierre");
 		}
@@ -607,7 +628,7 @@ sub on_speak
 	$irc->yield(privmsg => $chan[0][0] => "Sale n00b $user !") if ( $msg =~ m/win \d+ */i );
 
 	# ping
-	$irc->yield(privmsg => $chan[0][0] => "pong") if ( $msg =~ m/ping/i );
+	$irc->yield(privmsg => $chan[0][0] => "pong") if ( $msg =~ m/p.{1}ng/i );
 
 	# NEED
 	$irc->delay([privmsg => $chan[0][0] => "NEED !"],1) if ( match_tab($msg,@need) );
@@ -631,7 +652,7 @@ sub on_speak
 	$irc->delay([privmsg => $chan[0][0] => 'MOYEN'],1) if ( $msg =~ m/Y+A+?( |\.)*?$/ );
 	
 	# Random kick is random
-	kick($kernel, $chan[0][0], $user, "Problem?") if ( int(rand(500)) == 42 );
+	kick($kernel, $chan[0][0], $user, "Problem?") if ( int(rand(2000)) == 42 );
 	
 	# yo .. plait
 	$irc->delay([privmsg => $chan[0][0] => 'plait'],1) if ( $msg =~ m/y+o+?( |\.)*?$/ );
@@ -640,7 +661,7 @@ sub on_speak
 	$irc->delay([privmsg => $chan[0][0] => 'JUSTICE NULLE PART'],1) if ( $msg =~ m/AUTISME PARTOUT/ && $bot_owner eq $user );
 
 	# SRLY $nick
-	$irc->delay([privmsg => $chan[0][0] => "SRLY $user ?"],int(rand(60*60*24))) if ( int(rand(50)) == 1 );
+	$irc->delay([privmsg => $chan[0][0] => "SRLY $user ?"],int(rand(60*60*24))) if ( int(rand(100)) == 1 );
 }
 
 # Boucle des events
