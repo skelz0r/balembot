@@ -51,10 +51,10 @@ my %colors = (
 	15 => 15,
 );
 
-my @coucou_non = ("JUST CORN!", "Pas cool :(", "Genre !", ":(", "T'as peur hein ? ;D", "Pffff", "T'as bien raison :)","FU","Noob","Just LOL","Tocard ..");
+my @coucou_non = ("Tss", "Eoh, tu vas te clamer stp merci", "JUST CORN!", "Pas cool :(", "Genre !", ":(", "T'as peur hein ? ;D", "Pffff", "T'as bien raison :)","FU","Noob","Just LOL","Tocard ..");
 my @insultes = ("pute",,"trainée","raclure","michou","fiente","salaud", "batard","vtff","rage","connard","non","kill","kick","ban","oui","gueule","sale","fat","gros","tg","noob","enfoiré","espèce de","enfoirayd","n00b","boufon","tu");
-my @hl_bot = ("OH MY BOT !", "Oui ?", "Comment ?", "Mais qu'est-ce que tu racontes ?","Tu sais que tu parles à un robot ? TOCARD !", "N'impZ", "Non", "Wtf ?", "Je ne sais pas", "Oui", "Ta gueule un peu pour voir ?", "RAF", "TG n00b","LOL","WHAAAAAT ?","FU","Arrête de faire ton kevin ..","Seriously ..", "Tocard", "gizmo: Kick le, il sert à rien", "Idiot");
-my @need = ("ableton", "rhum","bière", "vodka", "apéro", "drogue", "clope", "sexe", "anna", "leffe", "cognac", "whisky", "vin", "gin", "fête", "soirée","pipe","fellation","sodomie","porn","feriel","weed","cigarette","anna","marvin","tabac","café","cafe");
+my @hl_bot = ("Arrête tes bétises stp", "OH MY BOT !", "Oui ?", "Comment ?", "Mais qu'est-ce que tu racontes ?","Tu sais que tu parles à un robot ? TOCARD !", "N'impZ", "Non", "Wtf ?", "Je ne sais pas", "Oui", "Ta gueule un peu pour voir ?", "RAF", "TG n00b","LOL","WHAAAAAT ?","FU","Arrête de faire ton kevin ..","Seriously ..", "Tocard", "gizmo: Kick le, il sert à rien", "Idiot");
+my @need = ("ableton", "rhum","bière", "vodka", "apéro", "drogue", "clope", "sexe", "anna", "leffe", "cognac", "whisky", "vin", "gin", "fête", "soirée","pipe","fellation","sodomie","porn","feriel","weed","cigarette","anna","marvin","tabac","café","cafe", "guinness", "whiskey", "beer");
 my @cla_array = ("RINETTE", "FOUTI", "non", "SSIQUE", "MARD", "VICULE", "PET", "BOTER", "MANT", "MÉ", "BAUD", "BAUDAGE", "MSER", "POTAGE", "QUE", "QUETTE", "KEKETTE", "RIFIER", "SH", "VECIN", "VIER", "YON", "YETTE", "QUÉ", "PIR");
 my @bonhomme_tete = ('&','#','@','§','o','ô','$','()','[]','{}','0','8','<>');
 my @bonhomme_bras_g = ('\\','\\\\',' ','_','/','\\');
@@ -558,6 +558,21 @@ sub on_speak
 
 	# BA .. LEMBOY	
 	$irc->yield(privmsg => $chan[0][0],'LEMBOY') if ( $msg =~ m/BA+?( |\.)*?$/ );
+	
+	# tufou? 
+	$irc->yield(privmsg => $chan[0][0],'UMAD?') if ( $msg =~ m/tufou\?$/i );
+
+	# WAT IS LOVE 
+	$irc->yield(privmsg => $chan[0][0],'IS LUV') if ( $msg =~ m/WAT+?( |\.)*?$/i );
+	
+	# BABY DON'T HURT ME
+	$irc->yield(privmsg => $chan[0][0],'DON\'T HURT ME') if ( $msg =~ m/BABY+?( |\.)*?$/i );
+
+	# DON'T HURT ME
+	$irc->yield(privmsg => $chan[0][0],'NO MORE') if ( $msg =~ m/don't hurt me+?( |\.)*?$/i );
+
+	# OKI? 
+	$irc->yield(privmsg => $chan[0][0],'OKI') if ( $msg =~ m/OKI\?$/i );
 
 	# COUCOU
 	aff_coucou($kernel,$chan[0][0],$user) if ( $msg =~ m/(c+o+u+c+o+u+|kiko+|kikou|y+o+p+|s+a+l+u+t+|s+u+p+)/i );
@@ -568,7 +583,7 @@ sub on_speak
 	aff_FU($kernel,$chan[0][0]) if ( $msg =~ m/^F+U+ *?$/i );
 
 	# JIZZ
-	if ( $msg =~ m/^(I+|S*H+E+|\w+)* *(C+O+R+N+|J+I+ZZ+|K+I+C+K+|B+A+S+|J+S+O+N+|C+A+M+E+|P+O{2,}P+|G+I+C+L+E+) *$/ )
+	if ( $msg =~ m/^(I+|S*H+E+|\w+)* *(TELEVERSER|F+A+R+T+|M+O+O+C+|C+O+R+N+|J+I+ZZ+|K+I+C+K+|B+A+S+|J+S+O+N+|C+A+M+E+|P+O{2,}P+|G+I+C+L+E+|D+O+G+) *$/ )
 	{
 		if ( int(rand(50)) == 1 )
 		{
@@ -580,7 +595,7 @@ sub on_speak
 		}
 	}
 	
-	if ( $msg =~ m/^(M+Y+|Y*O+U+R+|H+(I+S+|E+R+)|#?\w+ *\w*'s) *$/ )
+	if ( $msg =~ m/^(M+Y+|Y*O+U+R+|H+(I+S+|E+R+)|#?\w+ *\w*'(s|S)) *$/ )
 	{
 		if ( int(rand(100)) == 1 )
 		{
@@ -662,6 +677,7 @@ sub on_speak
 
 	# SRLY $nick
 	$irc->delay([privmsg => $chan[0][0] => "SRLY $user ?"],int(rand(60*60*24))) if ( int(rand(100)) == 1 );
+	$irc->delay([privmsg => $chan[0][0] => "Tu te clames $user stp, merci."],int(rand(60*60*2))) if ( int(rand(50)) == 1 );
 }
 
 # Boucle des events
